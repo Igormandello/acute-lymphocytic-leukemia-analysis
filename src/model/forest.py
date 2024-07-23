@@ -17,6 +17,7 @@ def train_forest(
     data: DataFrame,
     features: Optional[int] = None,
     grid_search_params: Optional[dict] = None,
+    grid_search_scoring: Optional[str] = "f1_macro",
     **kwargs,
 ) -> TrainForestResponse:
     model = RandomForestClassifier(random_state=774, n_jobs=-1, **kwargs)
