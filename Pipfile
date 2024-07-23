@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastcluster = ">=1.2.6"
+numpy = "<2.0.0"
+scikit-learn = ">=1.5.1"
+seaborn = "*"
+pandas = "*"
+matplotlib = "*"
+colour = "*"
+
+[dev-packages]
+jupyter = "*"
+
+[requires]
+python_version = "3.12"
