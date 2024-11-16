@@ -4,6 +4,7 @@ from typing import Optional, TypeVar
 from numpy import ndarray
 from pandas import DataFrame
 from sklearn.base import ClassifierMixin
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.metrics import balanced_accuracy_score, classification_report, f1_score, recall_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
@@ -20,6 +21,7 @@ class TrainClassifierResponse:
     train_report: str
     test_report: str
     feature_names: list[str]
+    scaler: StandardScaler
 
 
 def train_classifier(
@@ -67,4 +69,5 @@ def train_classifier(
         train_report=train_report,
         test_report=report,
         feature_names=response.feature_names,
+        scaler=response.scaler,
     )

@@ -20,5 +20,5 @@ def train_forest(
     grid_search_scoring: Optional[str] = "f1_macro",
     **kwargs,
 ) -> TrainForestResponse:
-    model = RandomForestClassifier(random_state=774, n_jobs=-1, **kwargs)
+    model = RandomForestClassifier(n_jobs=-1, **kwargs)
     return train_classifier(model, target, data, features, grid_search_params)

@@ -14,11 +14,12 @@ class MakeDatasetResponse:
     X_test: np.ndarray
     y_test: Series
     feature_names: list[str]
+    scaler: StandardScaler
 
 def make_dataset(data: DataFrame, features: Optional[int], target: str) -> MakeDatasetResponse:
-    X = data.drop(axis=1, labels=["prognostic", "subtype", "subtype_target"], errors="ignore")
+    X = data.drop(axis=1, labels=["prognostic", "subtype", "sex", "race", "is_white", "subtype_target"], errors="ignore")
     y = data[target]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y)
     feature_names = X.columns
 
     if features != None:
@@ -31,4 +32,4 @@ def make_dataset(data: DataFrame, features: Optional[int], target: str) -> MakeD
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    return MakeDatasetResponse(X_train, y_train, X_test, y_test, feature_names)
+    return MakeDatasetResponse(X_train, y_train, X_test, y_test, feature_names, scaler)

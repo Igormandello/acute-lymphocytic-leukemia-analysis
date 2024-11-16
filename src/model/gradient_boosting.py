@@ -19,5 +19,5 @@ def train_gradient_boosting(
     grid_search_params: Optional[dict] = None,
     **kwargs,
 ) -> TrainGradientBoostingResponse:
-    model = HistGradientBoostingClassifier(random_state=774, **kwargs)
+    model = HistGradientBoostingClassifier(**kwargs)
     return train_classifier(model, target, data, features, grid_search_params)

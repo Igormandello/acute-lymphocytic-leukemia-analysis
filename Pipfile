@@ -11,6 +11,7 @@ seaborn = "*"
 pandas = "*"
 matplotlib = "*"
 colour = "*"
+openpyxl = "*"
 
 [dev-packages]
 jupyter = "*"

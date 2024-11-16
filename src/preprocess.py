@@ -1,12 +1,11 @@
 import pandas as pd
 
-genes_csv = pd.read_csv("data/genes.csv", delimiter=",", decimal=",", header=None, low_memory=False)
+male_df = pd.read_csv("data/male.csv")
+female_df = pd.read_csv("data/female.csv")
+combined_df = pd.concat([male_df, female_df], axis=0).fillna(0)
 
-# Removing Mean Average Deviation values
-df = genes_csv.drop(axis=1, labels=[genes_csv.shape[1] - 1])
-df = df.transpose()
-df.iloc[0, 0] = "subtype"
-df.columns = df.iloc[0, :]
+extra_data_df = pd.read_csv("data/extra_data.tsv", delimiter="\t", keep_default_na=False)
+final_df = pd.merge(combined_df, extra_data_df, on="sample_id", how="left")
 
 prognostic_map = {
     "ETV6RUNX1": "GOOD",
@@ -21,7 +20,5 @@ prognostic_map = {
     "iAMP21": "POOR",
 }
 
-df["prognostic"] = df["subtype"].map(prognostic_map)
-
-df = df.drop(index=0)
-df.to_csv("data/genes_transformed.csv", index=False)
+final_df["prognostic"] = final_df["subtype"].map(prognostic_map)
+final_df.to_csv("data/genes_extra_data.csv", index=False)
