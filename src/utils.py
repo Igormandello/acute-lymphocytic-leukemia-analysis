@@ -14,7 +14,7 @@ colors = ["#00FF00", "#000000", "#FF0000"]
 cmap = LinearSegmentedColormap.from_list("gene", [Color(c1).rgb for c1 in colors])
 
 
-def get_importances(importances: np.ndarray, feature_names: list[str], top: int = 10):
+def get_importances(importances: np.ndarray, feature_names: list[str], top: int = 10) -> pd.Series:
     sorted_importances = {
         name: importance
         for importance, name in sorted(zip(importances, feature_names), key=lambda x: x[0], reverse=True)

@@ -12,6 +12,8 @@ pandas = "*"
 matplotlib = "*"
 colour = "*"
 openpyxl = "*"
+tqdm = "*"
+scipy = "*"
 
 [dev-packages]
 jupyter = "*"
