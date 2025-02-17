@@ -47,7 +47,6 @@ def train_classifier(
 
     if grid_search_params:
         classifier = classifier.best_estimator_
-        print(f"Best params: {classifier.get_params()}")
 
     prediction = classifier.predict(response.X_test)
 

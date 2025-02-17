@@ -55,14 +55,14 @@ def make_dataset(data: DataFrame, features: Optional[int], target: str) -> MakeD
 
 def make_grouped_dataset(data: DataFrame, target: str) -> MakeGroupedDatasetResponse:
     X = data.drop(axis=1, labels=["sample_id", "prognostic", "subtype", "race", "is_white", "subtype_target"], errors="ignore")
-    X_male = X[X["sex"] == "Male"]
-    X_female = X[X["sex"] == "Female"]
+    X_male = X[X["sex"] == "Male"].drop(columns=["sex"])
+    X_female = X[X["sex"] == "Female"].drop(columns=["sex"])
 
     y_male = data[data["sex"] == "Male"][target]
     y_female = data[data["sex"] == "Female"][target]
 
-    X_train_male, X_test_male, y_train_male, y_test_male = train_test_split(X_male.drop(columns=["sex"]), y_male, stratify=y_male)
-    X_train_female, X_test_female, y_train_female, y_test_female = train_test_split(X_female.drop(columns=["sex"]), y_female, stratify=y_female)
+    X_train_male, X_test_male, y_train_male, y_test_male = train_test_split(X_male, y_male, stratify=y_male)
+    X_train_female, X_test_female, y_train_female, y_test_female = train_test_split(X_female, y_female, stratify=y_female)
     feature_names = list(set(X.columns) - set(["sex"]))
 
     scaler = StandardScaler()
@@ -78,3 +78,28 @@ def make_grouped_dataset(data: DataFrame, target: str) -> MakeGroupedDatasetResp
     y_test = pd.concat([y_test_male, y_test_female])
 
     return MakeGroupedDatasetResponse(X_train, X_train_male, X_train_female, y_train, y_train_male, y_train_female, X_test, X_test_male, X_test_female, y_test, y_test_male, y_test_female, feature_names, scaler)
+
+def make_grouped_dataset_biased(data: DataFrame, target: str) -> MakeGroupedDatasetResponse:
+    X = data.drop(axis=1, labels=["sample_id", "prognostic", "subtype", "race", "is_white", "subtype_target"], errors="ignore")
+    X_male = X[X["sex"] == "Male"].drop(columns=["sex"])
+    X_female = X[X["sex"] == "Female"].drop(columns=["sex"])
+
+    y_male = data[data["sex"] == "Male"][target]
+    y_female = data[data["sex"] == "Female"][target]
+
+    X_train_male, X_test_male, y_train_male, y_test_male = train_test_split(X_male, y_male, stratify=y_male)
+    feature_names = list(set(X.columns) - set(["sex"]))
+
+    scaler = StandardScaler()
+    X_train_male = scaler.fit_transform(X_train_male)
+    X_train = X_train_male
+
+    X_test = scaler.transform(np.vstack([X_test_male, X_female]))
+    X_test_male = scaler.transform(X_test_male)
+    X_test_female = scaler.transform(X_female)
+
+    y_train = y_train_male
+    y_test_female = y_female
+    y_test = pd.concat([y_test_male, y_female])
+
+    return MakeGroupedDatasetResponse(X_train, X_train_male, [], y_train, y_train_male, [], X_test, X_test_male, X_test_female, y_test, y_test_male, y_test_female, feature_names, scaler)
