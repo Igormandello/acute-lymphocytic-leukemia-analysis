@@ -1,28 +1,68 @@
 from numpy import random
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, roc_auc_score, accuracy_score, recall_score
 from tqdm import tqdm
+from joblib import parallel_config
 
-from model.dataset import make_grouped_dataset, make_grouped_dataset_biased
+from model.dataset import MakeGroupedDatasetResponse, make_grouped_dataset
+
+from dataclasses import dataclass, field
+
+@dataclass
+class MetricsReport:
+    name: str
+    overall: list = field(default_factory=list)
+    male: list = field(default_factory=list)
+    female: list = field(default_factory=list)
+
+    def add(self, metric, response: MakeGroupedDatasetResponse, y_pred, y_pred_male, y_pred_female):
+        self.overall.append(metric(response.X_test, response.y_test, y_pred))
+        self.male.append(metric(response.X_test_male, response.y_test_male, y_pred_male))
+        self.female.append(metric(response.X_test_female, response.y_test_female, y_pred_female))
+
+@dataclass
+class MetricsResults:
+    report: pd.DataFrame
+    f1: MetricsReport
+    recall: MetricsReport
+    accuracy: MetricsReport
+
+def get_avg_std(data: list):
+    return f"{np.median(data):.4f} ± {np.std(data):.4f}"
+
+def create_report(*metrics: MetricsReport):
+    columns = ["Metric", "Overall", "Male", "Female"]
+    data = [[metric.name, get_avg_std(metric.overall), get_avg_std(metric.male), get_avg_std(metric.female)] for metric in metrics]
+    return pd.DataFrame(data, columns=columns)
 
 
-def report_results(df: pd.DataFrame, parameters: dict, seed_list: list[int], is_biased: bool):
-    male_f1s = []
-    female_f1s = []
-    f1s = []
+def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list: list[int], polynomial_degree: int | None = None):
+    f1 = MetricsReport("F1")
+    roc_auc = MetricsReport("ROC AUC")
+    recall = MetricsReport("Recall")
+    accuracy = MetricsReport("Accuracy")
+
     for seed in tqdm(seed_list):
         random.mtrand._rand.seed(seed)
 
-        model = HistGradientBoostingClassifier(**parameters)
-        response = make_grouped_dataset_biased(df, "subtype") if is_biased else make_grouped_dataset(df, "subtype")
-        model.fit(response.X_train, response.y_train)
+        model = model_factory(**parameters)
+        with parallel_config(n_jobs=-1):
+            response = make_grouped_dataset(df, "subtype", polynomial_degree)
+            model.fit(response.X_train, response.y_train)
 
-        f1s.append(f1_score(response.y_test, model.predict(response.X_test), average="weighted"))
-        male_f1s.append(f1_score(response.y_test_male, model.predict(response.X_test_male), average="weighted"))
-        female_f1s.append(f1_score(response.y_test_female, model.predict(response.X_test_female), average="weighted"))
+        y_pred = model.predict(response.X_test)
+        y_pred_male = model.predict(response.X_test_male)
+        y_pred_female = model.predict(response.X_test_female)
 
-    print(f"F1: {np.median(f1s):.4f} ± {np.std(f1s):.4f}")
-    print(f"Male F1: {np.median(male_f1s):.4f} ± {np.std(male_f1s):.4f}")
-    print(f"Female F1: {np.median(female_f1s):.4f} ± {np.std(female_f1s):.4f}")
+        f1.add(lambda _, x, y: f1_score(x, y, average="weighted"), response, y_pred, y_pred_male, y_pred_female)
+        recall.add(lambda _, x, y: recall_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
+        roc_auc.add(lambda x, y_true, _: roc_auc_score(y_true, model.predict_proba(x), multi_class='ovr'), response, y_pred, y_pred_male, y_pred_female)
+        accuracy.add(lambda _, x, y: accuracy_score(x, y), response, y_pred, y_pred_male, y_pred_female)
+
+    return MetricsResults(
+        report=create_report(f1, recall, roc_auc, accuracy),
+        f1=f1,
+        recall=recall,
+        accuracy=accuracy
+    )

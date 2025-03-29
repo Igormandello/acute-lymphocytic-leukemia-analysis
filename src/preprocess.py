@@ -10,9 +10,7 @@ save_prefix = f"preprocessed/min_tpm_{min_tpm_filter}/"
 os.makedirs(os.path.dirname(save_prefix), exist_ok=True)
 print(f"Preprocessing data, filtering out genes with max average TPM (by subtype) < {min_tpm_filter}. Saving to prefix '{save_prefix}'.")
 
-male_df = pd.read_csv("data/male.csv")
-female_df = pd.read_csv("data/female.csv")
-combined_df = pd.concat([male_df, female_df], axis=0).fillna(0)
+combined_df = pd.read_csv("data/genes.csv").fillna(0)
 extra_data_df = pd.read_csv("data/extra_data.tsv", delimiter="\t", keep_default_na=False)
 final_df = pd.merge(combined_df, extra_data_df, on="sample_id", how="left")
 

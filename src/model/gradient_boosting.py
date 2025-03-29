@@ -17,7 +17,8 @@ def train_gradient_boosting(
     data: DataFrame,
     features: Optional[int] = None,
     grid_search_params: Optional[dict] = None,
+    polynomial_degree: Optional[int] = None,
     **kwargs,
 ) -> TrainGradientBoostingResponse:
     model = HistGradientBoostingClassifier(**kwargs)
-    return train_classifier(model, target, data, features, grid_search_params)
+    return train_classifier(model, target, data, features, grid_search_params, polynomial_degree=polynomial_degree)

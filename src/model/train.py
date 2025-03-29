@@ -3,6 +3,7 @@ from typing import Optional, TypeVar
 
 from numpy import ndarray
 from pandas import DataFrame
+from joblib import parallel_config
 from sklearn.base import ClassifierMixin
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.metrics import balanced_accuracy_score, classification_report, f1_score, recall_score
@@ -31,19 +32,20 @@ def train_classifier(
     features: Optional[int] = None,
     grid_search_params: Optional[dict] = None,
     grid_search_scoring: Optional[str] = "f1_macro",
+    polynomial_degree: Optional[int] = None
 ) -> TrainClassifierResponse:
-    response = make_dataset(data, features, target)
+    response = make_dataset(data, features, target, polynomial_degree)
 
-    if grid_search_params:
-        classifier = GridSearchCV(
-            classifier,
-            n_jobs=-1,
-            cv=StratifiedKFold(n_splits=5, shuffle=False),
-            scoring=grid_search_scoring,
-            param_grid=grid_search_params,
-        )
+    with parallel_config(n_jobs=-1):
+        if grid_search_params:
+            classifier = GridSearchCV(
+                classifier,
+                cv=StratifiedKFold(n_splits=5, shuffle=False),
+                scoring=grid_search_scoring,
+                param_grid=grid_search_params,
+            )
 
-    classifier.fit(response.X_train, response.y_train)
+        classifier.fit(response.X_train, response.y_train)
 
     if grid_search_params:
         classifier = classifier.best_estimator_
