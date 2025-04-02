@@ -31,7 +31,7 @@ def train_classifier(
     data: DataFrame,
     features: Optional[int] = None,
     grid_search_params: Optional[dict] = None,
-    grid_search_scoring: Optional[str] = "f1_macro",
+    grid_search_scoring: Optional[str] = "recall_micro",
     polynomial_degree: Optional[int] = None
 ) -> TrainClassifierResponse:
     response = make_dataset(data, features, target, polynomial_degree)
@@ -42,7 +42,7 @@ def train_classifier(
                 classifier,
                 cv=StratifiedKFold(n_splits=5, shuffle=False),
                 scoring=grid_search_scoring,
-                param_grid=grid_search_params,
+                param_grid=grid_search_params
             )
 
         classifier.fit(response.X_train, response.y_train)

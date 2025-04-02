@@ -1,3 +1,4 @@
+import time
 from numpy import random
 import numpy as np
 import pandas as pd
@@ -31,38 +32,44 @@ class MetricsResults:
 def get_avg_std(data: list):
     return f"{np.median(data):.4f} ± {np.std(data):.4f}"
 
-def create_report(*metrics: MetricsReport):
+def create_report(*metrics: MetricsReport, durations: list[float]):
     columns = ["Metric", "Overall", "Male", "Female"]
     data = [[metric.name, get_avg_std(metric.overall), get_avg_std(metric.male), get_avg_std(metric.female)] for metric in metrics]
+    data.append(["Duration", get_avg_std(durations), 0, 0])
     return pd.DataFrame(data, columns=columns)
 
 
 def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list: list[int], polynomial_degree: int | None = None):
-    f1 = MetricsReport("F1")
+    f1_weighted = MetricsReport("F1 (Weighted)")
+    f1_macro = MetricsReport("F1 (Macro)")
+    recall_macro = MetricsReport("Recall (Macro)")
     roc_auc = MetricsReport("ROC AUC")
-    recall = MetricsReport("Recall")
     accuracy = MetricsReport("Accuracy")
+    durations = []
 
     for seed in tqdm(seed_list):
         random.mtrand._rand.seed(seed)
 
+        start = time.time()
         model = model_factory(**parameters)
         with parallel_config(n_jobs=-1):
             response = make_grouped_dataset(df, "subtype", polynomial_degree)
             model.fit(response.X_train, response.y_train)
 
+        durations.append(time.time() - start)
         y_pred = model.predict(response.X_test)
         y_pred_male = model.predict(response.X_test_male)
         y_pred_female = model.predict(response.X_test_female)
 
-        f1.add(lambda _, x, y: f1_score(x, y, average="weighted"), response, y_pred, y_pred_male, y_pred_female)
-        recall.add(lambda _, x, y: recall_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
+        f1_weighted.add(lambda _, x, y: f1_score(x, y, average="weighted"), response, y_pred, y_pred_male, y_pred_female)
+        f1_macro.add(lambda _, x, y: f1_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
+        recall_macro.add(lambda _, x, y: recall_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
         roc_auc.add(lambda x, y_true, _: roc_auc_score(y_true, model.predict_proba(x), multi_class='ovr'), response, y_pred, y_pred_male, y_pred_female)
         accuracy.add(lambda _, x, y: accuracy_score(x, y), response, y_pred, y_pred_male, y_pred_female)
 
     return MetricsResults(
-        report=create_report(f1, recall, roc_auc, accuracy),
-        f1=f1,
-        recall=recall,
+        report=create_report(f1_weighted, f1_macro, recall_macro, roc_auc, accuracy, durations=durations),
+        f1=f1_weighted,
+        recall=recall_macro,
         accuracy=accuracy
     )

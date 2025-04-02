@@ -53,6 +53,7 @@ def make_dataset(data: DataFrame, features: Optional[int], target: str, polynomi
         X_train = polynomial_features.fit_transform(X_train)
         X_test = polynomial_features.transform(X_test)
         feature_names = polynomial_features.get_feature_names_out(feature_names)
+        print(f"Size post polynomial: {len(feature_names)}")
 
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -73,25 +74,26 @@ def make_grouped_dataset(data: DataFrame, target: str, polynomial_degree: Option
     feature_names = list(set(X.columns) - set(["sex"]))
 
     X_train = np.vstack([X_train_male, X_train_female])
-
     if polynomial_degree != None:
-        polynomial_features = PolynomialFeatures(polynomial_degree, interaction_only=True)
+        polynomial_features = PolynomialFeatures(polynomial_degree)
         X_train = polynomial_features.fit_transform(X_train)
         X_train_male = polynomial_features.transform(X_train_male)
         X_train_female = polynomial_features.transform(X_train_female)
-
-        X_test = polynomial_features.transform(X_test)
-        X_test_male = polynomial_features.transform(X_test_male)
-        X_test_female = polynomial_features.transform(X_test_female)
-
-        feature_names = polynomial_features.get_feature_names_out(feature_names)
 
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_train_male = scaler.transform(X_train_male)
     X_train_female = scaler.transform(X_train_female)
 
-    X_test = scaler.transform(np.vstack([X_test_male, X_test_female]))
+    X_test = np.vstack([X_test_male, X_test_female])
+    if polynomial_degree != None:
+        X_test = polynomial_features.transform(X_test)
+        X_test_male = polynomial_features.transform(X_test_male)
+        X_test_female = polynomial_features.transform(X_test_female)
+
+        feature_names = polynomial_features.get_feature_names_out(feature_names)
+
+    X_test = scaler.transform(X_test)
     X_test_male = scaler.transform(X_test_male)
     X_test_female = scaler.transform(X_test_female)
 
