@@ -28,6 +28,7 @@ class MetricsResults:
     f1: MetricsReport
     recall: MetricsReport
     accuracy: MetricsReport
+    f1_by_class: MetricsReport
 
 def get_avg_std(data: list):
     return f"{np.median(data):.4f} ± {np.std(data):.4f}"
@@ -39,7 +40,7 @@ def create_report(*metrics: MetricsReport, durations: list[float]):
     return pd.DataFrame(data, columns=columns)
 
 
-def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list: list[int], polynomial_degree: int | None = None):
+def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list: list[int], polynomial_degree: int | None = None, target: str = "subtype"):
     f1_weighted = MetricsReport("F1 (Weighted)")
     f1_macro = MetricsReport("F1 (Macro)")
     recall_macro = MetricsReport("Recall (Macro)")
@@ -47,13 +48,15 @@ def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list:
     accuracy = MetricsReport("Accuracy")
     durations = []
 
+    f1_by_class = MetricsReport("F1 by Class")
+
     for seed in tqdm(seed_list):
         random.mtrand._rand.seed(seed)
 
         start = time.time()
         model = model_factory(**parameters)
         with parallel_config(n_jobs=-1):
-            response = make_grouped_dataset(df, "subtype", polynomial_degree)
+            response = make_grouped_dataset(df, target, polynomial_degree)
             model.fit(response.X_train, response.y_train)
 
         durations.append(time.time() - start)
@@ -67,9 +70,13 @@ def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list:
         roc_auc.add(lambda x, y_true, _: roc_auc_score(y_true, model.predict_proba(x), multi_class='ovr'), response, y_pred, y_pred_male, y_pred_female)
         accuracy.add(lambda _, x, y: accuracy_score(x, y), response, y_pred, y_pred_male, y_pred_female)
 
+        subtypes = df["subtype"].unique()
+        f1_by_class.add(lambda _, x, y: pd.Series(f1_score(x, y, average=None, labels=subtypes), index=subtypes), response, y_pred, y_pred_male, y_pred_female)
+
     return MetricsResults(
         report=create_report(f1_weighted, f1_macro, recall_macro, roc_auc, accuracy, durations=durations),
         f1=f1_weighted,
         recall=recall_macro,
-        accuracy=accuracy
+        accuracy=accuracy,
+        f1_by_class=f1_by_class
     )
