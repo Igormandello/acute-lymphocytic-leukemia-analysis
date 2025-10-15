@@ -14,6 +14,10 @@ colour = "*"
 openpyxl = "*"
 tqdm = "*"
 scipy = "*"
+lightgbm = "*"
+optuna = "*"
+ipykernel = "*"
+ipywidgets = "*"
 
 [dev-packages]
 jupyter = "*"

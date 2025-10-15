@@ -67,7 +67,7 @@ def report_results(df: pd.DataFrame, model_factory, parameters: dict, seed_list:
         f1_weighted.add(lambda _, x, y: f1_score(x, y, average="weighted"), response, y_pred, y_pred_male, y_pred_female)
         f1_macro.add(lambda _, x, y: f1_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
         recall_macro.add(lambda _, x, y: recall_score(x, y, average="macro"), response, y_pred, y_pred_male, y_pred_female)
-        roc_auc.add(lambda x, y_true, _: roc_auc_score(y_true, model.predict_proba(x), multi_class='ovr'), response, y_pred, y_pred_male, y_pred_female)
+        roc_auc.add(lambda x, y_true, _: roc_auc_score(y_true, model.predict_proba(x), average="weighted", multi_class='ovr'), response, y_pred, y_pred_male, y_pred_female)
         accuracy.add(lambda _, x, y: accuracy_score(x, y), response, y_pred, y_pred_male, y_pred_female)
 
         subtypes = df["subtype"].unique()

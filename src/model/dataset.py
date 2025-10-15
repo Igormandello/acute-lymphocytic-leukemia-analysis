@@ -101,3 +101,10 @@ def make_grouped_dataset(data: DataFrame, target: str, polynomial_degree: Option
     y_test = pd.concat([y_test_male, y_test_female])
 
     return MakeGroupedDatasetResponse(X_train, X_train_male, X_train_female, y_train, y_train_male, y_train_female, X_test, X_test_male, X_test_female, y_test, y_test_male, y_test_female, feature_names, scaler)
+
+def get_dataset(category: str, dataset: str, target: str) -> tuple[pd.DataFrame, pd.Series]:
+  df = get_dataframe(category, dataset)
+  return df.drop(labels=[target], axis=1), df[target]
+
+def get_dataframe(category: str, dataset: str, drop_columns: list[str] = ["sex"]) -> pd.DataFrame:
+  return pd.read_csv(f"../../preprocessed/{category}/{dataset}.csv").drop(labels=drop_columns, axis=1)
