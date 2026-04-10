@@ -1,14 +1,19 @@
 from enum import Enum
+from numpy.random import RandomState
 from typing import Optional
 from joblib import parallel_config
 import optuna
 import pandas as pd
-from sklearn.metrics import classification_report, f1_score, accuracy_score, balanced_accuracy_score, make_scorer, precision_recall_curve, recall_score
+import numpy as np
+from sklearn.metrics import ConfusionMatrixDisplay, classification_report, f1_score, accuracy_score, balanced_accuracy_score, make_scorer, precision_recall_curve, recall_score, confusion_matrix
 from sklearn.model_selection import cross_val_score
 
 from model.dataset import get_dataset
 
 from dataclasses import dataclass, field
+
+DEFAULT_RANDOM_SEED = 774
+# np.random.seed(DEFAULT_RANDOM_SEED)
 
 weighted_f1 = make_scorer(lambda x, y: f1_score(x, y, average="weighted"), greater_is_better=True)
 micro_recall = make_scorer(lambda x, y: recall_score(x, y, average="micro"), greater_is_better=True)
@@ -17,10 +22,11 @@ micro_recall = make_scorer(lambda x, y: recall_score(x, y, average="micro"), gre
 class EvalResults:
     f1_weighted: float
     f1_macro: float
-    recall_macro: float
+    recall_micro: float
     balanced_accuracy: float
     accuracy: float
     report: str
+    confusion_matrix: ConfusionMatrixDisplay
 
 class SuggestionValueType(Enum):
   INT = 0
@@ -39,7 +45,8 @@ class ObjectiveSuggestion:
 def eval_model(model, dataset: tuple[pd.DataFrame, pd.Series] = None, use_threshold: bool = False, report: bool = False):
   with parallel_config(n_jobs=-1):
     X, y = get_dataset(category="min_tpm_5", dataset="test", target="subtype") if dataset == None else dataset
-    if use_threshold and len(y.unique()) > 2:
+    labels = y.unique()
+    if use_threshold and len(labels) > 2:
       raise Exception("Threhsold must only be used in binary classifications")
 
     if use_threshold:
@@ -56,20 +63,22 @@ def eval_model(model, dataset: tuple[pd.DataFrame, pd.Series] = None, use_thresh
     results = EvalResults(
       f1_weighted=f1_score(y, prediction, average="weighted"),
       f1_macro=f1_score(y, prediction, average="macro"),
-      recall_macro=recall_score(y, prediction, average="macro"),
+      recall_micro=recall_score(y, prediction, average="micro"),
       balanced_accuracy=balanced_accuracy_score(y, prediction),
       accuracy=accuracy_score(y, prediction),
+      confusion_matrix=ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(y, prediction, labels=labels), display_labels=labels),
       report=classification_report(y, prediction)
     )
 
-  if report:
-    values = dict(results.__dict__)
-    values.pop("report")
-    print(pd.DataFrame(values, index=[0]))
+    if report:
+      values = dict(results.__dict__)
+      values.pop("report")
+      values.pop("confusion_matrix")
+      print(pd.DataFrame(values, index=[0]))
 
   return results
 
-def create_study(name: str = None, model_factory: callable = None, suggestions: list[ObjectiveSuggestion] = [], scoring: callable = weighted_f1, trials: int = 5, report_test_results: bool = True, custom_dataset: tuple[pd.DataFrame, pd.Series] = None, n_jobs: int = -1, verbosity = optuna.logging.INFO):
+def create_study(name: str = None, model_factory: callable = None, suggestions: list[ObjectiveSuggestion] = [], scoring: callable = weighted_f1, trials: int = 5, report_test_results: bool = True, custom_dataset: tuple[pd.DataFrame, pd.Series] = None, n_jobs: int = -1, random_state: int | None = None, verbosity = optuna.logging.INFO):
   storage = None
   if name != None:
     storage = optuna.storages.JournalStorage(
@@ -81,19 +90,20 @@ def create_study(name: str = None, model_factory: callable = None, suggestions: 
   study = optuna.create_study(study_name=name, storage=storage, direction="maximize", load_if_exists=True)
   current_trials = len(study.trials)
   if current_trials < trials:
-    objective_fn = create_objective(model_factory, scoring, suggestions, X=X, y=y)
+    objective_fn = create_objective(model_factory, scoring, suggestions, X=X, y=y, random_state=random_state)
     optuna.logging.set_verbosity(verbosity)
     study.optimize(objective_fn, n_trials=trials - current_trials, n_jobs=n_jobs)
 
-  model = model_factory(**study.best_params)
+  model = model_factory(**study.best_params, random_state=random_state if random_state is not None else DEFAULT_RANDOM_SEED)
   model.fit(X, y)
 
+  results = None
   if report_test_results:
-    eval_model(model, report=True)
+    results = eval_model(model, report=True)
 
-  return study, model
+  return study, model, results
 
-def create_objective(model_factory, scoring: callable, suggestions: list[ObjectiveSuggestion], X: pd.DataFrame, y: pd.Series):
+def create_objective(model_factory, scoring: callable, suggestions: list[ObjectiveSuggestion], X: pd.DataFrame, y: pd.Series, random_state: RandomState | int | None = None):
   def objective(trial: optuna.Trial):
     params = {}
     for suggestion in suggestions:
@@ -107,7 +117,7 @@ def create_objective(model_factory, scoring: callable, suggestions: list[Objecti
 
       params[name] = value if suggestion.transform_param == None else suggestion.transform_param(value)
 
-    classifier = model_factory(**params)
+    classifier = model_factory(**params, random_state=random_state if random_state is not None else DEFAULT_RANDOM_SEED)
     with parallel_config(n_jobs=-1):
       return cross_val_score(classifier, X, y, scoring=scoring, cv=5).mean()
   
@@ -119,7 +129,7 @@ def load_model(name: str, model_factory: callable, dataset: tuple[pd.DataFrame, 
   )
 
   study = optuna.load_study(study_name=name, storage=storage)
-  model = model_factory(**study.best_params)
+  model = model_factory(**study.best_params, random_state=DEFAULT_RANDOM_SEED)
 
   X, y = dataset
   model.fit(X, y)

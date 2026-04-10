@@ -18,6 +18,7 @@ lightgbm = "*"
 optuna = "*"
 ipykernel = "*"
 ipywidgets = "*"
+jinja2 = "*"
 
 [dev-packages]
 jupyter = "*"
