@@ -605,3 +605,6 @@
 {"op_code":0,"worker_id":"cdf8cf61-d5bf-4509-859b-c57d8ca8d85d-8715827904","study_name":"feature_selection_logistic_f1","directions":[2]}
 {"op_code":0,"worker_id":"57cd2466-bf97-422f-b1ae-15c26966ab59-8715827904","study_name":"feature_selection_logistic_f1","directions":[2]}
 {"op_code":0,"worker_id":"35686702-e89b-4cb3-a0b8-a7cdcd8e283b-8715827904","study_name":"feature_selection_logistic_f1","directions":[2]}
+{"op_code":0,"worker_id":"c06d0492-c4ff-4d53-a887-724bfceeac34-8469600448","study_name":"feature_selection_logistic_f1","directions":[2]}
+{"op_code":0,"worker_id":"eecdbaf0-b7c7-4281-a88e-c502cd2251f0-8469600448","study_name":"feature_selection_logistic_f1","directions":[2]}
+{"op_code":0,"worker_id":"a2cef2f1-4716-4347-9511-243a709e20fb-8469600448","study_name":"feature_selection_logistic_f1","directions":[2]}

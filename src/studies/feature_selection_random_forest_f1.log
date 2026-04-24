@@ -604,3 +604,6 @@
 {"op_code":0,"worker_id":"4e3aa43f-ea13-42ff-b553-a664ff13231f-8715827904","study_name":"feature_selection_random_forest_f1","directions":[2]}
 {"op_code":0,"worker_id":"8ad20af6-35c6-4c9d-a661-ccf4e69b0c80-8715827904","study_name":"feature_selection_random_forest_f1","directions":[2]}
 {"op_code":0,"worker_id":"7eb81c31-279e-40eb-9203-5d6ebef2a04e-8715827904","study_name":"feature_selection_random_forest_f1","directions":[2]}
+{"op_code":0,"worker_id":"b80d213c-9fe6-4f86-8189-5a7e7bb2cc53-8469600448","study_name":"feature_selection_random_forest_f1","directions":[2]}
+{"op_code":0,"worker_id":"e8137c54-b4ff-49b6-8c83-807940afe5cc-8469600448","study_name":"feature_selection_random_forest_f1","directions":[2]}
+{"op_code":0,"worker_id":"9d59dc1b-b1e8-4a70-895e-e2c77429aea8-8469600448","study_name":"feature_selection_random_forest_f1","directions":[2]}

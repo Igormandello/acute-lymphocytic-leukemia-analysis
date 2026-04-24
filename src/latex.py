@@ -39,11 +39,11 @@ def generate_models_table(model_header: str, model_results: dict[str, EvalResult
 
     return latex_table
 
-def generate_one_vs_all_genes_table(importances, gene_count_by_subtype, acc_by_subtype):
-    def format_genes(genes, k):
+def generate_one_vs_all_feature_table(importances, feature_count_by_subtype, acc_by_subtype, feature_name="gene", importance_name="importance", importance_scale=1000):
+    def format_features(features, k):
         return ", ".join(
-            f"{g['gene']} ({(g['importance'] * 1000):.2f})"
-            for g in genes[:k]
+            f"{g[feature_name]} ({(g[importance_name] * importance_scale):.2f})"
+            for g in features[:k]
         )
 
     lines = []
@@ -51,7 +51,7 @@ def generate_one_vs_all_genes_table(importances, gene_count_by_subtype, acc_by_s
     # Header
     lines.append("\\begin{tabular}{l c l p{9.5cm}}")
     lines.append("\\hline")
-    lines.append("\\textbf{Subtype} & \\textbf{Max BAcc. (\\%)} & \\textbf{Sex} & \\textbf{Genes (importance x 1000)} \\\\")
+    lines.append(f"\\textbf{{Subtype}} & \\textbf{{Max BAcc. (\\%)}} & \\textbf{{Sex}} & \\textbf{{Features ({{{importance_name}}} x {{{importance_scale}}})}} \\\\")
     lines.append("\\hline")
 
     for subtype in importances:
@@ -61,20 +61,20 @@ def generate_one_vs_all_genes_table(importances, gene_count_by_subtype, acc_by_s
         first = True
 
         for sex in sexes:
-            genes_str = format_genes(
+            featutes_str = format_features(
                 importances[subtype][sex],
-                gene_count_by_subtype[subtype]
+                feature_count_by_subtype[subtype]
             )
 
             if first:
                 line = (
                     f"\\multirow{{{len(sexes)}}}{{*}}{{{subtype}}} "
                     f"& \\multirow{{{len(sexes)}}}{{*}}{{{bacc:.2f}}} "
-                    f"& {sex} & {genes_str} \\\\"
+                    f"& {sex} & {featutes_str} \\\\"
                 )
                 first = False
             else:
-                line = f"& & {sex} & {genes_str} \\\\"
+                line = f"& & {sex} & {featutes_str} \\\\"
 
             lines.append(line)
 

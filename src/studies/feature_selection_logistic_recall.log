@@ -605,3 +605,6 @@
 {"op_code":0,"worker_id":"63f1c447-e4f8-4fa9-87f2-4cfa4128d82c-8715827904","study_name":"feature_selection_logistic_recall","directions":[2]}
 {"op_code":0,"worker_id":"8c0786f1-e37b-42d5-89f4-af77df1ceb9e-8715827904","study_name":"feature_selection_logistic_recall","directions":[2]}
 {"op_code":0,"worker_id":"c30e7dac-bc9b-4f27-b374-9dfcce2b3371-8715827904","study_name":"feature_selection_logistic_recall","directions":[2]}
+{"op_code":0,"worker_id":"4b31a2ee-a911-44ce-a0d2-5c02d97e85ac-8469600448","study_name":"feature_selection_logistic_recall","directions":[2]}
+{"op_code":0,"worker_id":"da9c0682-8247-4a67-84ee-a730062aad41-8469600448","study_name":"feature_selection_logistic_recall","directions":[2]}
+{"op_code":0,"worker_id":"da3af7d2-c0e4-4ff9-95ce-2c51ced6dbef-8469600448","study_name":"feature_selection_logistic_recall","directions":[2]}
